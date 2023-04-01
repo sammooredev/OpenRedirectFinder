@@ -1,0 +1,1 @@
+foo.com/gttp?foo=http://foo

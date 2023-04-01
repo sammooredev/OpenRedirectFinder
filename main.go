@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/TwiN/go-color"
@@ -20,7 +21,7 @@ import (
 
 // function to print help
 func PrintHelp() {
-	fmt.Println(color.Red + "OpenRedirectFinder" + color.Reset + "\n\n" + color.InBold("Usage:") + "\n$ ./OpenRedirectFinder <hosts file> <payload file> <verbose>\n\n" + color.InBold("Example 1 - (Only prints successful redirects):") + " \n\n\t$ ./OpenRedirectFinder alive_hosts.txt payloads.txt\n\n\\" + color.InBold("Example 2 - (Prints every request + status code):") + "\n\n\t$ ./OpenRedirectFinder alive_hosts.txt payloads.txt verbose\n\n")
+	fmt.Println(color.Red + "orf - Open Redirect Finder" + color.Reset + "\n\n" + color.InBold("Usage:") + "\n$ ./orf <endpoints file> <runtime mode> <payload file>\n\n" + color.InBold("Example 1 - (Only tests with single payload):") + " \n\n\t$ ./orf endpoints.txt 0\n\n" + color.InBold("Example 2 - (Tests with every payload defined in payloads.txt - warning - lots more traffic):") + "\n\n\t$ ./orf endpoints.txt 1 payloads.txt\n\n")
 	os.Exit(1)
 }
 
@@ -68,16 +69,26 @@ func ExtractEndpointsContainingURLs(endpoints_file []string) []string {
 	return endpointsWithUrls
 }
 
-func InsertPayloads(endpoints []string) []string {
-	var ModifiedEndpointArray []string
+// returns a new string array of endpoints where every instance of =http is replaced with the basic payload "=https://www.google.com/"
+func InsertBasicPayload(endpoints []string) []string {
+	var ModifiedWithBasicPayloadsEndpointArray []string
 	for _, endpoint := range endpoints {
 		modifiedEndpoint := strings.Replace(endpoint, "=http", "=https://www.google.com/", -1)
-		ModifiedEndpointArray = append(ModifiedEndpointArray, modifiedEndpoint)
+		ModifiedWithBasicPayloadsEndpointArray = append(ModifiedWithBasicPayloadsEndpointArray, modifiedEndpoint)
 	}
-	return ModifiedEndpointArray
+	return ModifiedWithBasicPayloadsEndpointArray
 }
 
-func handleQueryResponse()
+// returns a new string array (ModifiedWithPayloadsListArray) of endpoints. for each string passed, but each instance of =http with each line in the payloads file.
+func InsertPayloadList(endpoints []string, payloads []string) []string {
+	var ModifiedWithPayloadsListArray []string
+
+	return ModifiedWithPayloadsListArray
+}
+
+func handleQueryResponse() {
+
+}
 
 func makeQuery(modifiedEndpoints []string) {
 
@@ -85,9 +96,11 @@ func makeQuery(modifiedEndpoints []string) {
 
 func main() {
 	// declare variables
-	//var wg sync.WaitGroup // for running cmd commands simultaneouslya
+	//var wg sync.WaitGroup // for running cmd commands simultaneously
 	var arg1 string // to store the name of the payloads file
-	var arg2 string // to store the name of the endpoints file
+	var mode int    // to store the name of the endpoints file
+	var arg3 string // for payloads file
+	var modifiedEndpoints []string
 
 	// get date
 	//date := time.Now().Format("01-02-2006")
@@ -99,27 +112,43 @@ func main() {
 	CheckUserInput()
 
 	// handle arguements.
-	// 1. payloads file 2. hosts file
+
+	//handle hosts file
 	arg1 = os.Args[1]
-	arg2 = os.Args[2]
+	//handle run time mode -- can be 1 or 0. 0 = run with one payload, 1 = run with bypasses from payloads file,
+	mode, err := strconv.Atoi(os.Args[2])
+	if err != nil {
+		fmt.Println("\n ERROR - error processing run time mode. Did you input \"1\" or \"0\"?")
+	}
+
+	fmt.Println(os.Args)
+
+	if len(os.Args) == 4 {
+		arg3 = os.Args[3]
+	}
 
 	// open user input files, confirming they exist, if not exit with error.
 
 	// print title
-	fmt.Println(color.Ize(color.Red, "OpenRedirectFinder"))
+	fmt.Println(color.Ize(color.Red, "orf- Open Redirect Finder"))
 
 	// check user inputted an the needed arguements
 	CheckUserInput()
 
-	//payloadsFile := ReadFileToStringArray(arg1)
-	ReadFileToStringArray(arg2)
+	//read endpoints file & payloads files to string arrays
+
+	payloadsFile := ReadFileToStringArray(arg3)
 	endpointsFile := ReadFileToStringArray(arg1)
 
-	endpointsContaingUrls := ExtractEndpointsContainingURLs(endpointsFile)
+	endpointsContainingUrls := ExtractEndpointsContainingURLs(endpointsFile)
 
-	modifiedEndpoints := InsertPayloads(endpointsContaingUrls)
-
+	if mode == 1 {
+		fmt.Println("foo")
+		modifiedEndpoints = InsertPayloadList(endpointsContainingUrls, payloadsFile)
+	} else {
+		modifiedEndpoints = InsertBasicPayload(endpointsContainingUrls)
+	}
 	//fmt.Println(payloadsFile)
-	fmt.Println(endpointsContaingUrls)
+	//fmt.Println(endpointsContainingUrls)
 	fmt.Print(modifiedEndpoints)
 }
